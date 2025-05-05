@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Chat Room</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../style/style.css" />
+  </head>
+  <body>
+    <div class="container-fluid chat-container">
+      <div class="user-list">
+        <h5>👥 Online Users</h5>
+        <ul id="users" class="list-unstyled"></ul>
+      </div>
+
+      <div class="chat-box">
+        <div class="text-right">
+            <button id="toggleVideo" class="btn btn-outline-danger btn-sm" title="Video Stream">
+              <i class="fa-solid fa-video"></i>
+            </button>
+          </div>
+          
+        <div id="messages" class="chat-history"></div>
+
+        <!-- Chat & File Form -->
+        <form id="chatForm" enctype="multipart/form-data">
+          <div class="input-group">
+            <label for="fileInput" class="btn btn-light mb-0">
+              <i class="fa fa-paperclip fa-lg"></i>
+            </label>
+            <input
+              type="file"
+              id="fileInput"
+              name="file"
+              style="display: none"
+            />
+            <input
+              type="text"
+              id="msgInput"
+              name="text"
+              class="form-control"
+              placeholder="Type a message or choose a file..."
+            />
+            <div class="input-group-append">
+              <button type="submit" class="btn btn-success">Send</button>
+            </div>
+          </div>
+          <span id="filePreview"></span>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      const username = "{{ username }}";
+      const avatar = "{{ avatar }}";
+      const socket = new WebSocket("ws://localhost:8765");
+
+      const userList = document.getElementById("users");
+      const msgContainer = document.getElementById("messages");
+      const fileInput = document.getElementById("fileInput");
+      const filePreview = document.getElementById("filePreview");
+      const msgInput = document.getElementById("msgInput");
+
+      socket.onopen = () => {
+        socket.send(JSON.stringify({ username, avatar }));
+      };
+
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.type === "users") {
+          userList.innerHTML = "";
+          data.users.forEach((user) => {
+            userList.innerHTML += `
+            <li class="media mb-2">
+              <img src="/avatars/${user.avatar}" class="avatar" />
+              <div class="media-body">${user.username}</div>
+            </li>
+          `;
+          });
+        }
+
+        if (data.type === "message") {
+          const isMe = data.from === username;
+          const bubbleClass = isMe ? "bubble-right" : "bubble-left";
+          const alignClass = isMe ? "message-right" : "message-left";
+
+          let content = data.text;
+          if (content.startsWith("[FILE]")) {
+            const fileUrl = content.replace("[FILE] ", "").trim();
+            const filename = fileUrl.split("/").pop();
+            content = `<a href="${fileUrl}" download>📁 ${filename}</a>`;
+          }
+
+          const msgHTML = `
+          <div class="${alignClass}">
+            <img src="/avatars/${data.avatar}" class="avatar" />
+            <div class="bubble ${bubbleClass}">
+              <strong>${data.from}</strong><br />
+              ${content}
+            </div>
+          </div>
+        `;
+          msgContainer.innerHTML += msgHTML;
+          msgContainer.scrollTop = msgContainer.scrollHeight;
+        }
+      };
+
+      fileInput.addEventListener("change", function () {
+        const file = this.files[0];
+        filePreview.textContent = file ? `📎 ${file.name}` : "";
+      });
+
+      document
+        .getElementById("chatForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+          const text = msgInput.value.trim();
+          const file = fileInput.files[0];
+
+          // 1. Kirim teks jika ada
+          if (text) {
+            socket.send(text);
+            msgInput.value = "";
+          }
+
+          // 2. Kirim file jika ada
+          if (file) {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const res = await fetch("/upload", {
+              method: "POST",
+              body: formData,
+            });
+
+            const data = await res.json();
+            if (data.status === "success") {
+              socket.send(`[FILE] ${data.file_url}`);
+              fileInput.value = "";
+              filePreview.textContent = "";
+            }
+          }
+        });
+
+      msgInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          document
+            .getElementById("chatForm")
+            .dispatchEvent(new Event("submit"));
+        }
+      });
+    </script>
+  </body>
+</html>

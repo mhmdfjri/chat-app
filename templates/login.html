@@ -1,0 +1,29 @@
+<!-- templates/login.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Login - ChatApp</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" />
+  </head>
+  <body class="bg-light">
+    <div class="container mt-5">
+      <div class="row justify-content-center">
+        <div class="col-md-4">
+          <h3 class="text-center">Login</h3>
+          <form method="post" action="/login">
+            <div class="form-group">
+              <label>Username</label>
+              <input type="text" name="username" class="form-control" required />
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" name="password" class="form-control" required />
+            </div>
+            <button class="btn btn-primary btn-block">Login</button>
+            <p class="text-center mt-3"><a href="/register">Belum punya akun? Register</a></p>
+          </form>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

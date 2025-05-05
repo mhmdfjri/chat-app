@@ -1,0 +1,38 @@
+# Virtual Environment
+venv/
+.env/
+.venv/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.sublime-workspace
+*.sublime-project
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Log & Debug
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# FastAPI specific (optional)
+*.db
+*.sqlite3
+
+# Pytest cache
+.pytest_cache/
+
+# Build files
+build/
+dist/
+*.egg-info/
